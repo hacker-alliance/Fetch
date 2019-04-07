@@ -3,11 +3,11 @@
  * IoT Particle code
 **/
 
-//On-board LED pin
+//On-board LED pin - Show Current Network Status
 const int NETWORKLED  = D7;
-
+//First breadboard LED pin - Show Pending Request
 const int REQUESTLED = D0;
-//const int SENDINGLED = D1;
+const int SENDINGLED = D1;
 
 //Account ID
 char* accountID;
@@ -15,15 +15,17 @@ char* accountID;
 int networkUnavailableDelay;
 //Delay in seconds to wait to report in when network is available
 int reportingIntervalDelay;
-
+//Network Changed Flag
+bool networkChanged;
 //Initialize Photon device
 void setup() {
     //Set LEDSIGNAL mode to output 
     pinMode(NETWORKLED, OUTPUT);
+    pinMode(REQUESTLED, OUTPUT);
     Particle.subscribe("particle/device/ip", locationHandler);
-    Particle.publish("particle/device/ip");
     reportingIntervalDelay = 1;
     networkUnavailableDelay = 1;
+    networkChanged = true;
 }
 
 void locationHandler(const char* topic, const char* data) {
@@ -37,14 +39,21 @@ void loop() {
     if (Particle.connected()) {
         //Turn on LED
         digitalWrite(NETWORKLED, HIGH);
-        //Publish IP Event to Trigger Location Webhook
-        Particle.publish("particle/device/ip");
+        if (networkChanged) {
+            digitalWrite(REQUESTLED, LOW);
+            //Publish IP Event to Trigger Location Handler
+            Particle.publish("particle/device/ip");
+            
+            networkChanged = false;
+        }
         //Wait to report in
         delay(reportingIntervalDelay * 1000);
     }
     else  {
         //Turn off LED
         digitalWrite(NETWORKLED, LOW);
+        digitalWrite(REQUESTLED, HIGH);
+        networkChanged = true;
         //Wait long period for network to be available
         delay(networkUnavailableDelay * 1000);
     }
