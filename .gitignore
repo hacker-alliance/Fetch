@@ -11,4 +11,5 @@
 /build
 /captures
 .externalNativeBuild
-/node_nodules
+*node_modules
+.vscode
